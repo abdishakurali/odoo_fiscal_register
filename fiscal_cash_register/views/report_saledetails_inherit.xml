@@ -71,7 +71,7 @@
                             <strong>Sold inițial</strong>
                         </td>
                         <td class="text-end">
-                            <span t-out="format_amount(opening_balance, currency)" />
+                            <span t-out="opening_balance_fmt" />
                         </td>
                         <td></td>
                     </tr>
@@ -98,15 +98,15 @@
 
                                     <!-- Încasări if positive -->
                                     <td class="text-end">
-                                        <t t-if="move['amount'] &gt; 0">
-                                            <span t-out="format_amount(move['amount'], currency)" />
+                                        <t t-if="move.get('amount', 0) &gt; 0">
+                                            <span t-out="move.get('amount_fmt', '')" />
                                         </t>
                                     </td>
 
                                     <!-- Plăți if negative -->
                                     <td class="text-end">
-                                        <t t-if="move['amount'] &lt; 0">
-                                            <span t-out="format_amount(-move['amount'], currency)" />
+                                        <t t-if="move.get('amount', 0) &lt; 0">
+                                            <span t-out="move.get('amount_abs_fmt', '')" />
                                         </t>
                                     </td>
                                 </tr>
@@ -125,10 +125,10 @@
                             <strong>Rulaj zi</strong>
                         </td>
                         <td class="text-end">
-                            <span t-out="format_amount(total_incasari, currency)" />
+                            <span t-out="total_incasari_fmt" />
                         </td>
                         <td class="text-end">
-                            <span t-out="format_amount(total_plati, currency)" />
+                            <span t-out="total_plati_fmt" />
                         </td>
                     </tr>
 
@@ -142,8 +142,7 @@
                             <strong>Sold final</strong>
                         </td>
                         <td class="text-end" colspan="2">
-                            <span
-                                t-out="format_amount(opening_balance + total_incasari - total_plati, currency)" />
+                            <span t-out="sold_final_fmt" />
                         </td>
                     </tr>
                 </tbody>

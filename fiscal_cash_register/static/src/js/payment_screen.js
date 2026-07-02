@@ -31,8 +31,10 @@ function addFiscalSection(order, fileName) {
             lines.push(`VB^${fileName.replace(".txt", "")}^BON FISCAL RETUR`);
         }
 
-        // Customer CUI/VAT — from partner record or order note (pattern: "CUI:XXXXXXXX")
-        let rawCui = order.partner?.vat || "";
+        // Customer CUI/VAT — try both Odoo 16 (order.partner) and Odoo 17+ (order.partner_id)
+        // then fall back to a "CUI:XXXXXXXX" pattern in the order note.
+        const partner = order.partner || order.partner_id;
+        let rawCui = partner?.vat || "";
         if (!rawCui && order.note) {
             const m = order.note.match(/\bCUI[:\s]+([RO0-9][\s0-9]*)/i);
             if (m) rawCui = m[1];
@@ -43,9 +45,13 @@ function addFiscalSection(order, fileName) {
         }
 
         // Categorise order lines into three buckets:
-        //  - regularLines : positive-price, non-SGR products
-        //  - sgrLines     : bottle-deposit (is_sgr flag)
+        //  - regularLines : positive-price, non-SGR-deposit products
+        //  - sgrLines     : SGR bottle-deposit lines (the 0.50 lei deposit product)
         //  - discountLines: negative-price lines created by POS global-discount feature
+        //
+        // IMPORTANT: is_sgr is set on the PARENT product (the beverage), NOT on the SGR
+        // deposit product itself. The deposit product is identified by matching its product
+        // ID against the sgr_product_id field of the other lines in the same order.
         //
         // FiscalNet rejects negative prices in S^ commands ("Pretul nu poate fi negativ").
         // Global-discount lines are converted to a DV^ command on the subtotal instead.
@@ -53,9 +59,20 @@ function addFiscalSection(order, fileName) {
         const sgrLines = [];
         const discountLines = [];
 
+        // Collect the IDs of all SGR deposit products referenced in this order.
+        const sgrDepositIds = new Set();
+        order.lines.forEach((line) => {
+            const sgrRef = line.product_id?.sgr_product_id;
+            if (sgrRef) {
+                const id = typeof sgrRef === "object" ? sgrRef.id : sgrRef;
+                if (id) sgrDepositIds.add(id);
+            }
+        });
+
         order.lines.forEach((line) => {
             const unitPrice = line.unitPrices?.no_discount_total_included ?? line.price_unit ?? 0;
-            if (line.product_id?.is_sgr) {
+            const productId = line.product_id?.id;
+            if (sgrDepositIds.has(productId)) {
                 sgrLines.push(line);
             } else if (unitPrice < 0) {
                 discountLines.push(line);

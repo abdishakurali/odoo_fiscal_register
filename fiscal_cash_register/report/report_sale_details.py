@@ -33,7 +33,8 @@ class ReportSaleDetails(models.AbstractModel):
             ('state', '=', 'closed')
         ], limit=1)
 
-        opening_balance = previous_session.cash_register_balance_end_real if previous_session else 0.0
+        # cash_register_balance_end_real was removed/renamed in Odoo 17+; fall back to 0.
+        opening_balance = getattr(previous_session, 'cash_register_balance_end_real', 0.0) if previous_session else 0.0
 
         # Get all cash movements for this session.
         # In Odoo 17+ the pos_session_id field on account.bank.statement.line may not
@@ -54,38 +55,40 @@ class ReportSaleDetails(models.AbstractModel):
         total_paid = sum(order.amount_paid for order in orders)
         total_returned = sum(order.amount_return for order in orders)
 
+        def _fmt(amount):
+            try:
+                return f"{float(amount):,.2f} RON"
+            except Exception:
+                return f"0.00 RON"
+
         # Find the cash payment method and update its cash_moves
         payments = result.get('payments', [])
         for payment in payments:
             if payment.get('cash', False):
-                # Rebuild cash_moves with reason
                 payment['cash_moves'] = []
                 for move in cash_moves:
                     payment['cash_moves'].append({
                         'name': move.payment_ref or move.name or '',
                         'amount': move.amount,
+                        'amount_fmt': _fmt(move.amount),
+                        'amount_abs_fmt': _fmt(abs(move.amount)),
                         'reason': move.payment_ref or move.name or '',
                     })
 
-        # Define helper function for amount formatting
-        def format_amount(amount, currency):
-            return f"{amount:,.2f} {currency['symbol']}" if currency['position'] == 'after' else f"{currency['symbol']} {amount:,.2f}"
+        sold_final = opening_balance + total_incasari - total_plati
 
-        # Add values to the report
+        # Add values to the report — amounts are pre-formatted so the template
+        # does not need to call a Python callable (avoids safe_eval restrictions).
         result.update({
             'opening_balance': opening_balance,
+            'opening_balance_fmt': _fmt(opening_balance),
             'total_incasari': total_incasari,
+            'total_incasari_fmt': _fmt(total_incasari),
             'total_plati': total_plati,
+            'total_plati_fmt': _fmt(total_plati),
+            'sold_final_fmt': _fmt(sold_final),
             'current_date': fields.Date.context_today(self),
-            'currency': {
-                'symbol': 'RON',
-                'position': 'after',
-                'precision': 2,
-                'total_paid': total_paid,
-                'total_returned': total_returned
-            },
-            'format_amount': format_amount,
-            'payments': payments,  # Use updated payments with cash_moves
+            'payments': payments,
             'products': result.get('products', []),
             'products_info': result.get('products_info', {}),
             'refund_products': result.get('refund_products', []),
