@@ -35,10 +35,15 @@ class ReportSaleDetails(models.AbstractModel):
 
         opening_balance = previous_session.cash_register_balance_end_real if previous_session else 0.0
 
-        # Get all cash movements (statement lines) for this session
-        cash_moves = self.env['account.bank.statement.line'].search([
-            ('pos_session_id', '=', session.id)
-        ], order='create_date asc')
+        # Get all cash movements for this session.
+        # In Odoo 17+ the pos_session_id field on account.bank.statement.line may not
+        # exist; fall back to an empty recordset so the report still renders.
+        try:
+            cash_moves = self.env['account.bank.statement.line'].search([
+                ('pos_session_id', '=', session.id)
+            ], order='create_date asc')
+        except Exception:
+            cash_moves = self.env['account.bank.statement.line']
 
         # Calculate totals
         total_incasari = sum(move.amount for move in cash_moves if move.amount > 0)

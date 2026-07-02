@@ -79,7 +79,7 @@
                     <!-- Rulaje -->
                     <t t-set="row_index" t-value="1" />
                     <t t-foreach="payments" t-as="method">
-                        <t t-if="method['cash_moves']">
+                        <t t-if="method.get('cash_moves')">
                             <t t-foreach="method['cash_moves']" t-as="move">
                                 <tr>
                                     <td>

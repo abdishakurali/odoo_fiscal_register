@@ -26,55 +26,92 @@ function addFiscalSection(order, fileName) {
     const lines = [];
 
     try {
-        // Handle refund order header
         const isRefundOrder = order.lines.some((line) => line.refunded_orderline_id);
         if (isRefundOrder) {
             lines.push(`VB^${fileName.replace(".txt", "")}^BON FISCAL RETUR`);
         }
 
-        // VAT number for partner
-        if (order.partner && order.partner.vat) {
-            const cleanVat = order.partner.vat
-                .replace(/\s+/g, "")
-                .replace(/^RO/i, "")
-                .replace(/[^0-9]/g, "");
-            if (cleanVat) {
-                lines.push(`CF^${cleanVat}`);
-            }
+        // Customer CUI/VAT — from partner record or order note (pattern: "CUI:XXXXXXXX")
+        let rawCui = order.partner?.vat || "";
+        if (!rawCui && order.note) {
+            const m = order.note.match(/\bCUI[:\s]+([RO0-9][\s0-9]*)/i);
+            if (m) rawCui = m[1];
+        }
+        if (rawCui) {
+            const cleanVat = rawCui.replace(/\s+/g, "").replace(/^RO/i, "").replace(/[^0-9]/g, "");
+            if (cleanVat) lines.push(`CF^${cleanVat}`);
         }
 
-        // Process order lines
-        order.lines.forEach((line) => {
-            const isRefundLine = !!line.refunded_orderline_id;
-            const orderline_str = get_line_attributes(line);
+        // Categorise order lines into three buckets:
+        //  - regularLines : positive-price, non-SGR products
+        //  - sgrLines     : bottle-deposit (is_sgr flag)
+        //  - discountLines: negative-price lines created by POS global-discount feature
+        //
+        // FiscalNet rejects negative prices in S^ commands ("Pretul nu poate fi negativ").
+        // Global-discount lines are converted to a DV^ command on the subtotal instead.
+        const regularLines = [];
+        const sgrLines = [];
+        const discountLines = [];
 
-            if (!isRefundLine) {
-                lines.push(
-                    `S^${orderline_str[0]}^${orderline_str[1]}^${orderline_str[2]}^${orderline_str[3]}^${orderline_str[4]}^1`
-                );
+        order.lines.forEach((line) => {
+            const unitPrice = line.unitPrices?.no_discount_total_included ?? line.price_unit ?? 0;
+            if (line.product_id?.is_sgr) {
+                sgrLines.push(line);
+            } else if (unitPrice < 0) {
+                discountLines.push(line);
+            } else {
+                regularLines.push(line);
+            }
+        });
+
+        // Helper: emit one S^ (sale) or VS^ (return) line, with optional DP^/DV^ for
+        // line-level percentage discounts.
+        const emitLine = (line) => {
+            const isRefund = !!line.refunded_orderline_id;
+            const a = get_line_attributes(line);
+            if (!isRefund) {
+                lines.push(`S^${a[0]}^${a[1]}^${a[2]}^${a[3]}^${a[4]}^1`);
                 if (line.discount > 0) {
-                    const discountValue = Math.round(line.discount * 100);
-                    lines.push(`DP^${discountValue}`);
-                    const discountAmount = Math.round(
+                    lines.push(`DP^${Math.round(line.discount * 100)}`);
+                    const dv = Math.round(
                         (line.unitPrices?.no_discount_total_included || line.price_unit || 0) *
                             line.qty *
                             (line.discount / 100) *
                             100
                     );
-                    lines.push(`DV^${discountAmount}`);
+                    lines.push(`DV^${dv}`);
                 }
             } else {
                 lines.push(
-                    `VS^${orderline_str[0]}^${Math.abs(orderline_str[1])}^${Math.abs(
-                        orderline_str[2]
-                    )}^${orderline_str[3]}^${orderline_str[4]}^1`
+                    `VS^${a[0]}^${Math.abs(a[1])}^${Math.abs(a[2])}^${a[3]}^${a[4]}^1`
                 );
             }
-        });
+        };
+
+        // 1. Regular product lines
+        regularLines.forEach(emitLine);
+
+        // 2. SGR bottle-deposit lines — placed before the discount checkpoint so the
+        //    receipt total stays aligned with the Odoo order total.
+        sgrLines.forEach(emitLine);
+
+        // 3. Global discount: aggregate all negative-price discount lines into one
+        //    ST^ + DV^ pair applied to the running subtotal.
+        if (discountLines.length > 0) {
+            const totalDiscountCents = discountLines.reduce((sum, line) => {
+                const p = Math.abs(
+                    line.unitPrices?.no_discount_total_included ?? line.price_unit ?? 0
+                );
+                return sum + Math.round(p * Math.abs(line.qty || 1) * 100);
+            }, 0);
+            if (totalDiscountCents > 0) {
+                lines.push(`ST^`);
+                lines.push(`DV^${totalDiscountCents}`);
+            }
+        }
 
         lines.push(`ST^0`);
 
-        // Process payments
         order.payment_ids.forEach((payment) => {
             const paymentType = payment.payment_method_id?.payment_type_code || 9;
             const amountInCents = Math.round(payment.amount * 100);
