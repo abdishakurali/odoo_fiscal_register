@@ -11,11 +11,11 @@ class PosSession(models.Model):
 
     def action_print_romanian_cash_register(self):
         """Action to print Romanian Cash Register report"""
-        return self.env.ref('fiscal_cash_register.action_report_pos_romanian_cash_register').report_action(self)
+        return self.env.ref('fiscal_net.action_report_pos_romanian_cash_register').report_action(self)
 
     def action_generate_register_report(self):
         """Action to generate Registrul De Casa report"""
-        return self.env.ref('fiscal_cash_register.report_cash_book_action').report_action(self)
+        return self.env.ref('fiscal_net.report_cash_book_action').report_action(self)
 
     @api.model
     def ensure_fiscal_directory(self):
@@ -146,7 +146,7 @@ class PosSession(models.Model):
 
 
 class POSSessionCashBook(models.AbstractModel):
-    _name = 'report.fiscal_cash_register.report_cash_book_view_template'
+    _name = 'report.fiscal_net.report_cash_book_view_template'
     _description = 'Cash Book Report'
 
     @api.model

@@ -38,7 +38,7 @@ class FiscalApiClient(models.Model):
             # Fallback to system parameter
             _logger.info(f"🔄 Falling back to system parameter...")
             endpoint = self.env['ir.config_parameter'].sudo().get_param(
-                'fiscal_cash_register.fiscal_api_endpoint', 
+                'fiscal_net.fiscal_api_endpoint', 
                 'http://localhost:65400/api/Receipt'
             )
             _logger.info(f"📋 API endpoint from system parameter: {endpoint}")
@@ -168,14 +168,14 @@ class FiscalApiClient(models.Model):
                 else:
                     # Fallback to system parameter
                     api_endpoint = self.env['ir.config_parameter'].sudo().get_param(
-                        'fiscal_cash_register.fiscal_api_endpoint', 
+                        'fiscal_net.fiscal_api_endpoint', 
                         'http://localhost:65400/api/Receipt'
                     )
                     _logger.warning(f"⚠️ Using system parameter fallback: {api_endpoint}")
             elif not api_endpoint or not api_endpoint.strip():
                 # Fallback to system parameter if no endpoint provided and no POS config ID
                 api_endpoint = self.env['ir.config_parameter'].sudo().get_param(
-                    'fiscal_cash_register.fiscal_api_endpoint', 
+                    'fiscal_net.fiscal_api_endpoint', 
                     'http://localhost:65400/api/Receipt'
                 )
                 _logger.warning(f"⚠️ No API endpoint provided and no POS config ID, using system parameter fallback: {api_endpoint}")

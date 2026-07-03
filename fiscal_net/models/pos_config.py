@@ -99,21 +99,21 @@ class PosConfig(models.Model):
     def _get_fiscal_integration_method(self):
         """Get fiscal integration method from config parameter"""
         return self.env['ir.config_parameter'].sudo().get_param(
-            'fiscal_cash_register.fiscal_integration_method', 'local_file'
+            'fiscal_net.fiscal_integration_method', 'local_file'
         )
 
     @api.model
     def _get_fiscal_os_type(self):
         """Get fiscal OS type from config parameter"""
         return self.env['ir.config_parameter'].sudo().get_param(
-            'fiscal_cash_register.fiscal_os_type', 'android'
+            'fiscal_net.fiscal_os_type', 'android'
         )
 
     @api.model
     def _get_fiscal_api_endpoint(self):
         """Get fiscal API endpoint from config parameter"""
         return self.env['ir.config_parameter'].sudo().get_param(
-            'fiscal_cash_register.fiscal_api_endpoint', 'http://localhost:65400/api/Receipt'
+            'fiscal_net.fiscal_api_endpoint', 'http://localhost:65400/api/Receipt'
         )
 
     def action_save(self):

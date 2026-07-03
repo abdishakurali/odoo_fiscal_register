@@ -6,8 +6,8 @@
             <field name="name">Cash Book Report</field>
             <field name="model">pos.session</field>
             <field name="report_type">qweb-pdf</field>
-            <field name="report_name">fiscal_cash_register.report_cash_book_view_template</field>
-            <field name="report_file">fiscal_cash_register.report_cash_book_view_template</field>
+            <field name="report_name">fiscal_net.report_cash_book_view_template</field>
+            <field name="report_file">fiscal_net.report_cash_book_view_template</field>
         </record>
 
         <template id="report_cash_book_view_template">

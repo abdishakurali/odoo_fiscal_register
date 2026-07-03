@@ -7,8 +7,8 @@
             <field name="name">Raport de gestiune</field>
             <field name="model">res.company</field>
             <field name="report_type">qweb-pdf</field>
-            <field name="report_name">fiscal_cash_register.management_report_template</field>
-            <field name="report_file">fiscal_cash_register.management_report_template</field>
+            <field name="report_name">fiscal_net.management_report_template</field>
+            <field name="report_file">fiscal_net.management_report_template</field>
         </record>
 
         <!-- ── QWeb template ─────────────────────────────────────────────── -->

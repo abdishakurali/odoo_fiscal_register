@@ -55,7 +55,7 @@ def post_init_hook(env):
 
     except Exception as e:
         # Log error but don't fail the module installation
-        _logger.error(f"Error in fiscal_cash_register post_init_hook: {e}")
+        _logger.error(f"Error in fiscal_net post_init_hook: {e}")
         import traceback
         _logger.error(traceback.format_exc())
 

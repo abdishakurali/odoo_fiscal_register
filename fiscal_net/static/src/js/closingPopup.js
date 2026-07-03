@@ -6,7 +6,7 @@ import { AlertDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 
 patch(ClosePosPopup.prototype, {
     async cashinoutreport() {
-        return this.report.doAction("fiscal_cash_register.report_cash_book_action", [
+        return this.report.doAction("fiscal_net.report_cash_book_action", [
             this.pos.session.id,
         ]);
     },

@@ -1,13 +1,13 @@
-/** @odoo-module alias=fiscal_cash_register.favicon_setter **/
+/** @odoo-module alias=fiscal_net.favicon_setter **/
 
 // Set custom favicon for all pages
 function setCustomFavicon() {
-    const faviconPath = '/fiscal_cash_register/static/src/img/favicon.ico';
+    const faviconPath = '/fiscal_net/static/src/img/favicon.ico';
     
     // Remove existing favicon links (be more aggressive for POS)
     const existingFavicons = document.querySelectorAll('link[rel*="icon"], link[rel*="shortcut"]');
     existingFavicons.forEach(link => {
-        if (link.href && !link.href.includes('fiscal_cash_register')) {
+        if (link.href && !link.href.includes('fiscal_net')) {
             link.remove();
         }
     });
@@ -16,7 +16,7 @@ function setCustomFavicon() {
     const allLinks = document.querySelectorAll('head link');
     allLinks.forEach(link => {
         if (link.rel && (link.rel.includes('icon') || link.rel.includes('shortcut')) && 
-            link.href && !link.href.includes('fiscal_cash_register')) {
+            link.href && !link.href.includes('fiscal_net')) {
             link.remove();
         }
     });
@@ -66,7 +66,7 @@ if (typeof MutationObserver !== 'undefined') {
                     if (node.nodeType === Node.ELEMENT_NODE && 
                         node.tagName === 'LINK' && 
                         (node.rel.includes('icon') || node.rel.includes('shortcut')) &&
-                        !node.href.includes('fiscal_cash_register')) {
+                        !node.href.includes('fiscal_net')) {
                         // Remove non-custom favicons
                         node.remove();
                     }

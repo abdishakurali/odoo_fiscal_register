@@ -43,7 +43,7 @@ class ManagementReportWizard(models.TransientModel):
         # Return the report action
         return {
             'type': 'ir.actions.report',
-            'report_name': 'fiscal_cash_register.management_report_template',
+            'report_name': 'fiscal_net.management_report_template',
             'report_type': 'qweb-pdf',
             'data': data,
             'context': {

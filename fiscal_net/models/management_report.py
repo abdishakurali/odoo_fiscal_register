@@ -12,7 +12,7 @@ _D_FMT  = '%d.%m.%Y'
 
 
 class ManagementReport(models.AbstractModel):
-    _name = 'report.fiscal_cash_register.management_report_template'
+    _name = 'report.fiscal_net.management_report_template'
     _description = 'Raport de Gestiune'
 
     # ── Entry point ───────────────────────────────────────────────────────────
