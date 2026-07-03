@@ -33,37 +33,12 @@ def post_init_hook(env):
             if not getattr(pos_config, 'fiscal_api_endpoint', None):
                 pos_config.fiscal_api_endpoint = fiscal_api_endpoint
 
-        # CRITICAL: Remove categories from ALL existing SGR products
-        _logger.info("Fixing all existing SGR products...")
+        # Ensure all existing SGR products are active and visible in POS
         sgr_products = env['product.product'].sudo().search([('name', '=', 'SGR')])
-        sgr_templates = env['product.template'].sudo().search([
-            '|', ('name', '=', 'SGR'), ('is_sgr', '=', True)
-        ])
+        if sgr_products:
+            sgr_products.write({'active': True, 'available_in_pos': True})
 
-        if sgr_products or sgr_templates:
-            _logger.info(f"Found {len(sgr_products)} SGR products and {len(sgr_templates)} SGR templates")
-
-            # Use SQL to set category to NULL - most reliable method
-            try:
-                env.cr.execute("""
-                    UPDATE product_template
-                    SET categ_id = NULL, active = true
-                    WHERE id IN (
-                        SELECT product_tmpl_id
-                        FROM product_product
-                        WHERE name = 'SGR'
-                    ) OR name = 'SGR' OR is_sgr = true
-                """)
-                env.cr.commit()
-                _logger.info("✓ Successfully set category to NULL for all SGR products using SQL")
-            except Exception as e:
-                _logger.warning(f"SQL update failed, falling back to ORM: {e}")
-                # Fallback to ORM
-                all_sgr = sgr_products | sgr_templates
-                all_sgr.write({'categ_id': False, 'active': True})
-                _logger.info("✓ Successfully set category to empty for all SGR products using ORM")
-
-        # Ensure all products available in POS are active
+# Ensure all products available in POS are active
         pos_products = env['product.template'].search([
             ('available_in_pos', '=', True),
             ('active', '=', False)
